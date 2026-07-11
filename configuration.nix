@@ -3,9 +3,19 @@
 {
   imports = [ ];
 
-  # 1. Bootloader Configuration (Crucial for dual-booting)
-  boot.loader.systemd-boot.enable = true;
+  # 1. GRUB Bootloader Configuration (UEFI & Dual-Boot)
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    device = "nodev";
+    useOSProber = true; # Finds Windows partition automatically
+  };
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot";
+
+  # Load display modules early (prevent black screen on Intel Arc GPU)
+  boot.initrd.kernelModules = [ "xe" "i915" ];
+  boot.kernelModules = [ "xe" "i915" ];
 
   # 2. Hostname & Time Zone
   networking.hostName = "hyprland-btw";
@@ -36,7 +46,7 @@
 
   # 4. Bluetooth Configuration
   hardware.bluetooth.enable = true;
-  services.blueman.enable = true; # Bluetooth graphical manager
+  services.blueman.enable = true; 
 
   # 5. Sound Configuration (PipeWire)
   services.pulseaudio.enable = false;
@@ -50,14 +60,13 @@
   };
 
   # 6. Intel Arc A750 Graphics Drivers
-  # Required parameters to enable performance support for Intel Arc cards
   boot.kernelParams = [ "i915.enable_guc=3" ]; 
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
-      intel-media-driver # Hardware accelerated video decoding
-      vpl-gpu-rt         # Intel video processing library runtime
-      intel-compute-runtime # OpenCL compute runtime for development
+      intel-media-driver   # Hardware accelerated video decoding
+      vpl-gpu-rt           # Intel video processing library runtime (QSV)
+      intel-compute-runtime # OpenCL compute runtime for Intel Arc/Xe
     ];
   };
 
@@ -74,7 +83,7 @@
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
-    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; # render/video groups allow GPU access
+    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
     packages = with pkgs; [ ];
   };
 
@@ -88,6 +97,6 @@
     git
   ];
 
-  # Using version 26.50 as requested
-  system.stateVersion = "26.50"; 
+  # NixOS state version
+  system.stateVersion = "26.05"; 
 }
