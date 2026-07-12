@@ -9,11 +9,10 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }@inputs: {
-    nixosConfigurations.hyprland-btw = nixpkgs.lib.nixosSystem {
+  outputs = { nixpkgs, home-manager, ... }: {
+    nixosConfigurations.nixos-btw = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        ./hardware-configuration.nix
         ./configuration.nix
         home-manager.nixosModules.home-manager
         {
