@@ -8,7 +8,7 @@
   # Required Git Configuration
   programs.git.enable = true;
 
-  # Bash configuration & auto-start Hyprland via UWSM
+  # Bash configuration & auto-start Hyprland via UWSM (Variables fixed)
   programs.bash = {
     enable = true;
     shellAliases = {
@@ -21,7 +21,7 @@
     '';
   };
 
-  # User-space packages (e.g. wallpaper utility)
+  # User-space packages
   home.packages = with pkgs; [
     hyprpaper
   ];
