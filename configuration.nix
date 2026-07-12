@@ -3,29 +3,19 @@
 {
   imports = [ ];
 
-  # 1. GRUB Bootloader Configuration (UEFI & Dual-Boot)
-  boot.loader.grub = {
-    enable = true;
-    efiSupport = true;
-    device = "nodev";
-    useOSProber = true; # Automatically detects Windows partition
-  };
+  # 1. Bootloader Configuration (Crucial for dual-booting)
+  boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot";
 
-  # 2. Modern Kernel & Graphics Fixes (For Intel Arc A750 GPU)
-  boot.kernelPackages = pkgs.linuxPackages_latest; # Use the latest Linux kernel
-  boot.initrd.kernelModules = [ "i915" ];          # Load graphics driver early
-  boot.kernelModules = [ "i915" ];
-  boot.kernelParams = [ "i915.enable_guc=3" ];      # Required for Arc cards
-  services.xserver.videoDrivers = [ "modesetting" ]; # Recommend driver for Wayland/modern Intel
-
-  # 3. Hostname & Time Zone
+  # 2. Hostname & Time Zone
   networking.hostName = "hyprland-btw";
   time.timeZone = "Asia/Dhaka";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # 4. Wi-Fi Configuration (Auto-connect to Nomi-5G)
+  # Use the latest Linux Kernel Packages for best hardware support
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # 3. Wi-Fi Configuration (Auto-connect to Nomi-5G)
   networking.networkmanager.enable = true;
   networking.networkmanager.ensureProfiles.profiles = {
     "Nomi-5G" = {
@@ -47,11 +37,11 @@
     };
   };
 
-  # 5. Bluetooth Configuration
+  # 4. Bluetooth Configuration
   hardware.bluetooth.enable = true;
-  services.blueman.enable = true; 
+  services.blueman.enable = true; # Bluetooth graphical manager
 
-  # 6. Sound Configuration (PipeWire)
+  # 5. Sound Configuration (PipeWire)
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -62,15 +52,25 @@
     jack.enable = true;
   };
 
-  # 7. Hardware Acceleration Packages
+  # 6. Intel Arc A750 Graphics Drivers
+  # Prioritize Xe and load i915 fallback during early boot stages
+  boot.initrd.kernelModules = [ "xe" "i915" ];
+  boot.kernelModules = [ "xe" "i915" ];
+  services.xserver.videoDrivers = [ "xe" "i915" ];
+
+  # Parameter to enable performance / GuC support for Intel Arc cards
+  boot.kernelParams = [ "i915.enable_guc=3" ]; 
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
-      intel-media-driver   # Hardware accelerated video decoding
-      vpl-gpu-rt           # Intel video processing library runtime (QSV)
-      intel-compute-runtime # OpenCL compute runtime for Intel Arc/Xe
+      intel-media-driver   # VA-API (iHD) for video acceleration
+      vpl-gpu-rt           # oneVPL (QSV) runtime for newer GPUs
+      intel-compute-runtime # OpenCL compute runtime for Intel GPUs
     ];
   };
+
+  # 7. Enable SSH
+  services.openssh.enable = true;
 
   # 8. Enable Experimental Flakes Support
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -85,30 +85,22 @@
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
-    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
+    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; # render/video groups allow GPU access
     packages = with pkgs; [ ];
   };
 
-  # 11. Getty Autologin
-  # Temporarily commented out to prevent display crash loops on startup.
-  # services.getty.autologinUser = "tony";
+  # 11. Getty Autologin (TTY1 autologin directly to Hyprland)
+  services.getty.autologinUser = "tony";
 
-  # 12. SSH Configuration
-  services.openssh.enable = true;
-  services.openssh.settings.PermitRootLogin = "yes";
-  services.openssh.settings.PasswordAuthentication = true;
-
-  # 13. Essential System Packages
+  # 12. System Packages (Added your requested packages)
   environment.systemPackages = with pkgs; [
-    vim
+    neovim # Lowercase 'neovim' is required by nixpkgs
     wget
-    git
+    foot
+    waybar
+    kitty
   ];
 
-  # Allow proprietary/unfree packages and non-free firmware (Required for Intel Arc)
-  nixpkgs.config.allowUnfree = true;
-  hardware.enableRedistributableFirmware = true;
-
-  # State version
+  # NixOS state version
   system.stateVersion = "26.05"; 
 }
