@@ -75,7 +75,21 @@
   # 8. Enable Experimental Flakes Support
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # 9. Enable Hyprland with UWSM
+  # 9. Enable SDDM with Wayland & Auto-login directly to Hyprland-UWSM
+  # This is highly stable and prevents any TTY/profile login loops.
+  services.displayManager = {
+    sddm = {
+      enable = true;
+      wayland.enable = true;
+    };
+    autoLogin = {
+      enable = true;
+      user = "tony";
+    };
+    defaultSession = "hyprland-uwsm";
+  };
+
+  # 10. Enable Hyprland with UWSM
   programs.firefox.enable = true;
   programs.hyprland = {
     enable = true;
@@ -83,16 +97,13 @@
     xwayland.enable = true;
   };
 
-  # 10. User Account (Create user "tony")
+  # 11. User Account (Create user "tony")
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
     extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
     packages = with pkgs; [ tree ];
   };
-
-  # 11. Getty Autologin (TTY1 autologin directly to Hyprland)
-  services.getty.autologinUser = "tony";
 
   # 12. System Packages
   environment.systemPackages = with pkgs; [
