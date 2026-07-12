@@ -8,17 +8,12 @@
   # Required Git Configuration
   programs.git.enable = true;
 
-  # Bash configuration & auto-start Hyprland via UWSM (Loop-proof)
+  # Bash configuration (Completely safe from loops)
   programs.bash = {
     enable = true;
     shellAliases = {
       btw = "echo i use nixos, btw";
     };
-    profileExtra = ''
-      if uwsm check may-start; then
-        exec uwsm start hyprland-uwsm.desktop
-      fi
-    '';
   };
 
   # User-space packages
