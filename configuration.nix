@@ -1,18 +1,18 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ ];
+  imports = [ ./hardware-configuration.nix ];
 
   # 1. Bootloader Configuration (Crucial for dual-booting)
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # 2. Hostname & Time Zone
-  networking.hostName = "hyprland-btw";
+  networking.hostName = "nixos";
   time.timeZone = "Asia/Dhaka";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # Use the latest Linux Kernel Packages for best hardware support
+  # Use the latest Linux Kernel Packages for best Arc GPU support
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # 3. Wi-Fi Configuration (Auto-connect to Nomi-5G)
@@ -39,7 +39,7 @@
 
   # 4. Bluetooth Configuration
   hardware.bluetooth.enable = true;
-  services.blueman.enable = true; # Bluetooth graphical manager
+  services.blueman.enable = true; 
 
   # 5. Sound Configuration (PipeWire)
   services.pulseaudio.enable = false;
@@ -53,10 +53,10 @@
   };
 
   # 6. Intel Arc A750 Graphics Drivers
-  # Prioritize Xe and load i915 fallback during early boot stages
-  boot.initrd.kernelModules = [ "xe" "i915" ];
-  boot.kernelModules = [ "xe" "i915" ];
-  services.xserver.videoDrivers = [ "xe" "i915" ];
+  # DG2 Arc cards are natively driven by 'i915'. We use 'modesetting' as the video driver for Wayland stability.
+  boot.initrd.kernelModules = [ "i915" ];
+  boot.kernelModules = [ "i915" ];
+  services.xserver.videoDrivers = [ "modesetting" ];
 
   # Parameter to enable performance / GuC support for Intel Arc cards
   boot.kernelParams = [ "i915.enable_guc=3" ]; 
@@ -76,25 +76,27 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # 9. Enable Hyprland with UWSM
+  programs.firefox.enable = true;
   programs.hyprland = {
     enable = true;
     withUWSM = true;
+    xwayland.enable = true;
   };
 
   # 10. User Account (Create user "tony")
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
-    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; # render/video groups allow GPU access
-    packages = with pkgs; [ ];
+    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
+    packages = with pkgs; [ tree ];
   };
 
   # 11. Getty Autologin (TTY1 autologin directly to Hyprland)
   services.getty.autologinUser = "tony";
 
-  # 12. System Packages (Added your requested packages)
+  # 12. System Packages
   environment.systemPackages = with pkgs; [
-    neovim # Lowercase 'neovim' is required by nixpkgs
+    neovim
     wget
     foot
     waybar
