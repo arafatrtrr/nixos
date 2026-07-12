@@ -8,21 +8,24 @@
     enable = true;
     efiSupport = true;
     device = "nodev";
-    useOSProber = true; # Finds Windows partition automatically
+    useOSProber = true; # Automatically detects Windows partition
   };
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot";
 
-  # Load display modules early (prevent black screen on Intel Arc GPU)
-  boot.initrd.kernelModules = [ "xe" "i915" ];
-  boot.kernelModules = [ "xe" "i915" ];
+  # 2. Modern Kernel & Graphics Fixes (For Intel Arc A750 GPU)
+  boot.kernelPackages = pkgs.linuxPackages_latest; # Use the latest Linux kernel
+  boot.initrd.kernelModules = [ "i915" ];          # Load graphics driver early
+  boot.kernelModules = [ "i915" ];
+  boot.kernelParams = [ "i915.enable_guc=3" ];      # Required for Arc cards
+  services.xserver.videoDrivers = [ "modesetting" ]; # Recommend driver for Wayland/modern Intel
 
-  # 2. Hostname & Time Zone
+  # 3. Hostname & Time Zone
   networking.hostName = "hyprland-btw";
   time.timeZone = "Asia/Dhaka";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # 3. Wi-Fi Configuration (Auto-connect to Nomi-5G)
+  # 4. Wi-Fi Configuration (Auto-connect to Nomi-5G)
   networking.networkmanager.enable = true;
   networking.networkmanager.ensureProfiles.profiles = {
     "Nomi-5G" = {
@@ -44,11 +47,11 @@
     };
   };
 
-  # 4. Bluetooth Configuration
+  # 5. Bluetooth Configuration
   hardware.bluetooth.enable = true;
   services.blueman.enable = true; 
 
-  # 5. Sound Configuration (PipeWire)
+  # 6. Sound Configuration (PipeWire)
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -59,8 +62,7 @@
     jack.enable = true;
   };
 
-  # 6. Intel Arc A750 Graphics Drivers
-  boot.kernelParams = [ "i915.enable_guc=3" ]; 
+  # 7. Hardware Acceleration Packages
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
@@ -70,16 +72,16 @@
     ];
   };
 
-  # 7. Enable Experimental Flakes Support
+  # 8. Enable Experimental Flakes Support
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # 8. Enable Hyprland with UWSM
+  # 9. Enable Hyprland with UWSM
   programs.hyprland = {
     enable = true;
     withUWSM = true;
   };
 
-  # 9. User Account (Create user "tony")
+  # 10. User Account (Create user "tony")
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
@@ -87,16 +89,26 @@
     packages = with pkgs; [ ];
   };
 
-  # 10. Getty Autologin (TTY1 autologin directly to Hyprland)
-  services.getty.autologinUser = "tony";
+  # 11. Getty Autologin
+  # Temporarily commented out to prevent display crash loops on startup.
+  # services.getty.autologinUser = "tony";
 
-  # Essential System Packages (Required for git setup)
+  # 12. SSH Configuration
+  services.openssh.enable = true;
+  services.openssh.settings.PermitRootLogin = "yes";
+  services.openssh.settings.PasswordAuthentication = true;
+
+  # 13. Essential System Packages
   environment.systemPackages = with pkgs; [
     vim
     wget
     git
   ];
 
-  # NixOS state version
+  # Allow proprietary/unfree packages and non-free firmware (Required for Intel Arc)
+  nixpkgs.config.allowUnfree = true;
+  hardware.enableRedistributableFirmware = true;
+
+  # State version
   system.stateVersion = "26.05"; 
 }
