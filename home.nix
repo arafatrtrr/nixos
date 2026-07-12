@@ -8,7 +8,7 @@
   # Required Git Configuration
   programs.git.enable = true;
 
-  # Bash configuration (Completely safe from loops)
+  # Bash configuration (Completely clean and free from auto-start hacks)
   programs.bash = {
     enable = true;
     shellAliases = {
