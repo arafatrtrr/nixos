@@ -76,7 +76,7 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # 9. Enable SDDM with Wayland & Auto-login directly to Hyprland-UWSM
-  # This is much more stable than TTY auto-login hacks and bypasses profile loop bugs.
+  # This is much more stable than manual TTY login and prevents login loops.
   services.displayManager = {
     sddm = {
       enable = true;
@@ -97,97 +97,19 @@
     xwayland.enable = true;
   };
 
-  # 11. User Account (Create user "tony")
+  # 11. Enable Fish Shell System-Wide
+  programs.fish.enable = true;
+
+  # 12. User Account (Create user "tony" with Fish shell configured as default)
   users.users.tony = {
     isNormalUser = true;
     description = "Tony";
+    shell = pkgs.fish; # Sets Fish as default login shell
     extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
     packages = with pkgs; [ tree ];
   };
 
-  # 12. System Packages
-  environment.systemPackages = with pkgs; [
-    neovim
-    wget
-    foot
-    waybar
-    kitty
-  ];
-
-  # NixOS state version
-  system.stateVersion = "26.05"; 
-}    };
-  };
-
-  # 4. Bluetooth Configuration
-  hardware.bluetooth.enable = true;
-  services.blueman.enable = true; 
-
-  # 5. Sound Configuration (PipeWire)
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
-  };
-
-  # 6. Intel Arc A750 Graphics Drivers
-  # DG2 Arc cards are natively driven by 'i915'. We use 'modesetting' as the video driver for Wayland stability.
-  boot.initrd.kernelModules = [ "i915" ];
-  boot.kernelModules = [ "i915" ];
-  services.xserver.videoDrivers = [ "modesetting" ];
-
-  # Parameter to enable performance / GuC support for Intel Arc cards
-  boot.kernelParams = [ "i915.enable_guc=3" ]; 
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-media-driver   # VA-API (iHD) for video acceleration
-      vpl-gpu-rt           # oneVPL (QSV) runtime for newer GPUs
-      intel-compute-runtime # OpenCL compute runtime for Intel GPUs
-    ];
-  };
-
-  # 7. Enable SSH
-  services.openssh.enable = true;
-
-  # 8. Enable Experimental Flakes Support
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
-  # 9. Enable SDDM with Wayland & Auto-login directly to Hyprland-UWSM
-  # This is highly stable and prevents any TTY/profile login loops.
-  services.displayManager = {
-    sddm = {
-      enable = true;
-      wayland.enable = true;
-    };
-    autoLogin = {
-      enable = true;
-      user = "tony";
-    };
-    defaultSession = "hyprland-uwsm";
-  };
-
-  # 10. Enable Hyprland with UWSM
-  programs.firefox.enable = true;
-  programs.hyprland = {
-    enable = true;
-    withUWSM = true;
-    xwayland.enable = true;
-  };
-
-  # 11. User Account (Create user "tony")
-  users.users.tony = {
-    isNormalUser = true;
-    description = "Tony";
-    extraGroups = [ "networkmanager" "wheel" "video" "render" ]; 
-    packages = with pkgs; [ tree ];
-  };
-
-  # 12. System Packages
+  # 13. System Packages
   environment.systemPackages = with pkgs; [
     neovim
     wget
