@@ -3,7 +3,7 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
-  # 1. Bootloader Configuration (Crucial for dual-booting)
+  # 1. Bootloader Configuration (Required EFI enabled in VirtualBox)
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -12,34 +12,17 @@
   time.timeZone = "Asia/Dhaka";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # Use the latest Linux Kernel Packages for best Arc GPU support
+  # Use the latest Linux Kernel Packages
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # 3. Wi-Fi Configuration (Auto-connect to Nomi-5G)
+  # 3. VirtualBox Network Configuration
+  # VirtualBox uses a virtual wired connection (NAT or Bridged).
+  # NetworkManager automatically configures this; no Wi-Fi profiles are needed.
   networking.networkmanager.enable = true;
-  networking.networkmanager.ensureProfiles.profiles = {
-    "Nomi-5G" = {
-      connection = {
-        id = "Nomi-5G";
-        type = "wifi";
-      };
-      wifi = {
-        ssid = "Nomi-5G";
-        mode = "infrastructure";
-      };
-      wifi-security = {
-        key-mgmt = "wpa-psk";
-        psk = "244466666";
-      };
-      ipv4 = {
-        method = "auto";
-      };
-    };
-  };
 
-  # 4. Bluetooth Configuration
-  hardware.bluetooth.enable = true;
-  services.blueman.enable = true; 
+  # 4. VirtualBox Guest Integration
+  # Enables shared clipboard, seamless display resizing, and pointer integration.
+  virtualisation.virtualbox.guest.enable = true;
 
   # 5. Sound Configuration (PipeWire)
   services.pulseaudio.enable = false;
@@ -52,22 +35,8 @@
     jack.enable = true;
   };
 
-  # 6. Intel Arc A750 Graphics Drivers
-  # DG2 Arc cards are natively driven by 'i915'. We use 'modesetting' as the video driver for Wayland stability.
-  boot.initrd.kernelModules = [ "i915" ];
-  boot.kernelModules = [ "i915" ];
-  services.xserver.videoDrivers = [ "modesetting" ];
-
-  # Parameter to enable performance / GuC support for Intel Arc cards
-  boot.kernelParams = [ "i915.enable_guc=3" ]; 
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-media-driver   # VA-API (iHD) for video acceleration
-      vpl-gpu-rt           # oneVPL (QSV) runtime for newer GPUs
-      intel-compute-runtime # OpenCL compute runtime for Intel GPUs
-    ];
-  };
+  # 6. Graphics Drivers for VirtualBox Guest
+  hardware.graphics.enable = true;
 
   # 7. Enable SSH
   services.openssh.enable = true;
@@ -76,7 +45,6 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # 9. Enable SDDM with Wayland & Auto-login directly to Hyprland-UWSM
-  # This is much more stable than manual TTY login and prevents login loops.
   services.displayManager = {
     sddm = {
       enable = true;
